@@ -4,4 +4,5 @@
 
 // Basic WebSocket demo echoes msg back to client
 include "server.php";
-$newSocket = new WebSocket("192.168.50.30","12345");
+$master = new WebSocket("192.168.50.185",12345);
+

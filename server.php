@@ -1,4 +1,5 @@
 <?php  
+include "db.php";
 
 class WebSocket{
 	var $newSocket;
@@ -25,7 +26,7 @@ class WebSocket{
 		while(true){
 			$changedSockets = $this->socketsArray;
 			//watch sockets for changes
-			$numChanges = socket_select($changedSockets,$write,$except,NULL);
+			$numChanges = socket_select($changedSockets,$write=NULL,$except=NULL,NULL);
 			if($numChanges>0) {
 				foreach($changedSockets as $socket){
 					if($socket==$this->newSocket){
@@ -69,6 +70,27 @@ class WebSocket{
 	function send($client,$buffer){ 
 		$msg = $this->encode($buffer);
 		$sentMsg=socket_write($client,$msg,strlen($msg));
+    
+    $index = stripos($msg, '^');
+    if($index > 0)
+    {
+      $temp = substr($msg, $index + 1);
+      
+      //if(preg_match("/POPS \d \d/", $temp, $match)){ 
+			//  $qId= (int)$match[1];
+      //  $voteValue= (int)$match[2];
+		  //}
+      
+      $pop = "";
+      $qId = 0;
+      $qId = 0;
+      list($pop, $qId, $voteValue) = split(" ", $temp, 3);
+      if($pop === "POPS" && $qId > 0)
+      {
+        $db = new DB();
+        $db->Vote($qId, $voteValue);
+      }
+    }
 		$this->say("Sending ".$msg." to ".$client);
 	} 
 
@@ -93,11 +115,7 @@ class WebSocket{
 
 	function doHandShake($client,$buffer){
 		$this->log("{$buffer}\r\n");
-		list($resource,$connection,$host,$origin,$version,$key,$key1,$key2,$l8b) = $this->getHeaders($buffer);
-		
-		if($connection != "Upgrade") {
-			return false;
-		}
+		list($resource,$host,$origin,$version,$key,$key1,$key2,$l8b) = $this->getHeaders($buffer);
 
 		if(!$key) {		
 			$upgrade  = "HTTP/1.1 101 WebSocket Protocol Handshake\r\n".
@@ -149,13 +167,10 @@ class WebSocket{
 	}
 
 	function getHeaders($req){
-		$resource=$connection=$host=$origin=$version=$key=$key1=$key2=null;
+		$resource=$host=$origin=$version=$key=$key1=$key2=null;
 
 		if(preg_match("/GET (.*) HTTP/"               ,$req,$match)){ 
 			$resource=$match[1];
-		}
-		if(preg_match("/Connection: (.*)\r\n/",$req,$match)){ 
-			$connection=$match[1];
 		}
 		if(preg_match("/Host: (.*)\r\n/"              ,$req,$match)){ 
 			$host=$match[1];
@@ -181,7 +196,7 @@ class WebSocket{
 		if($match=substr($req,-8)){
 			$l8b=$match;
 		}
-		return array($resource,$connection,$host,$origin,$version,$key,$key1,$key2,$l8b);
+		return array($resource,$host,$origin,$version,$key,$key1,$key2,$l8b);
 	}
 
 	function getClientSocket($socket){

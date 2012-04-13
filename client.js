@@ -4,7 +4,8 @@ var token="^";
 
 function connect(){
 	url = window.location.hostname;
-	var host = "ws://"+url+":12345";
+	var host = "ws://" + url + ":12345";
+	//var host = "ws://192.168.50.30:12345";
 	//don't open another socket if already open
 	if(socket==null){ 
 		socket = new WebSocket(host);
@@ -29,9 +30,8 @@ function unwrap(msg) {
 	return message;
 }
 
-function send(){
-	var msg;
-	msg = $("name").value+token+$("entry").value;
+function send(msg) {	
+	msg = $("name").value+token+msg;
 	if(socket.readyState!=1){ 
 		alert("Please connect before sending message"); 
 		return; 
