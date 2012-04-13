@@ -1,24 +1,39 @@
-<!--<?php phpinfo(); 
 
-$serverName = "VYPHANPC";
-$connectionInfo = array( "Database"=>"SocketPoll");
-
-/* Connect using Windows Authentication. */
-$conn = sqlsrv_connect( $serverName, $connectionInfo);
-if( $conn === false )
-{
-     echo "Unable to connect.</br>";
-     die( print_r( sqlsrv_errors(), true));
-}
-else
-     echo "Connected.</br>";
-
-
-sqlsrv_close( $conn);
-
-
-?>-->
-<?php include "db.php"; ?>
+<?php include "db.php";
+	$db = new DB();
+		
+	if(isset($_POST["title"]))
+	{
+		$title = $_POST["title"];
+		
+		$item = new Question();
+		$item->Id = 0;
+		$item->Title = $title;
+		$item->Description = $_POST["description"];
+		$item->Modified = date("Y-m-d H:i:s");	
+		
+		
+		if(isset($_POST["anwserText"]))
+		{
+			$answers = $_POST["anwserText"];
+			if(count($answers) > 0)
+			{
+				$value = 0;
+				foreach($answers as $answer)
+				{
+					$aItem = new Answer();
+					$aItem->Value = ++$value;
+					$aItem->Text = $answer;
+					$aItem->Modified = date("Y-m-d H:i:s");	
+					$list[$value - 1] = $aItem;
+				}
+				$item->Answers = $list;
+			}
+		}
+		
+		$db->CreateQuestion($item);
+	}
+ ?>
 <html>
   <head>
     <title>WebSocket</title>
@@ -28,7 +43,7 @@ sqlsrv_close( $conn);
   <body>
     <table width="100%" style="padding-top: 10px; vertical-align: top;">
       <tr>
-        <td style="width: 30%; border-right-style: solid; border-right-width: 5px; border-right-color: White;">
+        <td style="width: 350px; border-right-style: solid; border-right-width: 5px; border-right-color: White;">
           <div>
             User Name
             <input id="name" type="textbox" />
@@ -36,7 +51,7 @@ sqlsrv_close( $conn);
               Connect
             </button>
           </div>
-          <div id="log">
+          <div id="log" style="width: 350px;word-wrap: break-word;">
           </div>
           <div id="toolbar">
             <input id="entry" type="textbox" onkeypress="onkey(event)" />
@@ -60,13 +75,12 @@ sqlsrv_close( $conn);
                   Description
                 </th>
                 <th style="width: 10%;" scope="col">
-                  <a onclick="surgeonUI.editSurgeon('7')" href="#">Add </a>
+                  <a onclick="ShowQuestion(true);" href="#">Add </a>
                 </th>
               </tr>
-              <?php 
-                  $db = new DB();
+              <?php                   
                   $list = $db->GetQuestions();
-                  for ($i = 0; $i < 2; $i++ )
+                  for ($i = 0; $i < count($list); $i++ )
 		              { 
                     if($i % 2 === 0)
                     {?>
@@ -81,7 +95,7 @@ sqlsrv_close( $conn);
                         </td>
                         <td valign="middle" align="center">
                           <a onclick="surgeonUI.editSurgeon('5')" href="#">Edit </a>
-                          <a onclick="send('<?php echo $list[$i]->Title ?>');"
+                          <a onclick="send('<?php echo $list[$i]->PollText ?>');"
                                             href="#">Create Poll </a>
                         </td>
                       </tr>
@@ -98,7 +112,7 @@ sqlsrv_close( $conn);
                         </td>
                         <td valign="middle" align="center">
                           <a onclick="surgeonUI.editSurgeon('5')" href="#">Edit </a>
-                          <a onclick="send('<?php echo $list[$i]->Title ?>');"
+                          <a onclick="send('<?php echo $list[$i]->PollText ?>');"
                                             href="#">Create Poll </a>
                         </td>
                       </tr>
@@ -110,5 +124,66 @@ sqlsrv_close( $conn);
         </td>
       </tr>
     </table>
+	
+	<div id="overlapDiv" style="left: 0px; top: 0px; padding: 0px; float: left; width: 100%; height: 100%; z-index: 9990;display: none; position:absolute">
+		<div style="left: 0px; top: 0px; padding: 0px; float: left; background-color: #000000; width: 100%; height: 100%; z-index: 9990;
+		filter: alpha(opacity=70); opacity:0.7; position:absolute;">		
+		</div>
+		<div style="margin-left: 25%; margin-top: 5%; padding: 20px; border: 1px solid #868686; float: left;
+            background-color: #ffffff; width: 600px; height: 400px; z-index: 9991; position:relative; border-radius: 10px; overflow: auto;">
+			<form action="" method="post">
+				<table id="EditQuestion" width="100%" cellpadding="0px" cellspacing="0px" style="text-align: left;
+                        color: Navy; padding: 5px;">
+                        <tr>
+                            <td style="width: 100px;">
+                                Title
+                            </td>
+                            <td>
+                                <input type="text" name="title" style="width:300px;" />
+                            </td>                            
+                        </tr>
+						<tr>
+							<td>
+                                Description
+                            </td>
+							<td>
+								<textarea name="description" rows="3" style="width:300px;"></textarea>
+							</td>
+						</tr>
+						<tr>
+                            <td>
+                                Answer 1
+                            </td>
+                            <td>
+                                <input type="text" name="anwserText[]" style="width:300px;" />
+                            </td>                            
+                        </tr>
+						<tr>
+                            <td>
+                                Answer 2
+                            </td>
+                            <td>
+                                <input type="text" name="anwserText[]" style="width:300px;" />
+                            </td>                            
+                        </tr>
+						<tr>
+                            <td>
+                                Answer 3
+                            </td>
+                            <td>
+                                <input type="text" name="anwserText[]" style="width:300px;" />
+                            </td>                            
+                        </tr>
+						<tr id="AddAnswerRow">
+							<td colspan="2">
+                                <a href="#" onclick="AddAnswer();">Add Answers</a>
+                            </td>							
+						</tr>												
+						</table>
+                <input type="submit" id="NewQuestion" value="Save" />
+				<input type="button" id="Cancel" value="Cancel" onclick="ShowQuestion(false);" />
+            </form> 
+		</div>
+	</div>	
   </body>
 </html>

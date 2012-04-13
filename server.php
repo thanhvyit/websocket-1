@@ -40,7 +40,7 @@ class WebSocket{
 						}
 					}
 					else {
-						$bytes = socket_recv($socket,$buffer,1024,0);
+						$bytes = socket_recv($socket,$buffer,2048,0);
 						if($bytes===0){ 
 							$this->disconnect($socket); 
 						}
